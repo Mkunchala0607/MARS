@@ -4,7 +4,7 @@ import { AlertTriangle, CheckCircle2, LogIn, LogOut, ScanLine, Undo2, XCircle } 
 import { api, useApi } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import { GATE_STATUS_LABELS } from '../constants.js'
-import { Badge, Button, Card, Field, Input, Loading, PageHeader, Table, fmtDate, fmtDateTime } from '../components/ui.jsx'
+import { Badge, Button, Card, Field, Input, Loading, PageHeader, Table, fmtDate, fmtDateTime, inr } from '../components/ui.jsx'
 
 // Security verification: look up a pass (typed or scanned from its QR), confirm it is approved,
 // verify the seal number for sealed outward loads, then record the movement.
@@ -47,7 +47,19 @@ export default function Gate() {
   }
 
   const valid = p && p.status === 'Approved' && !p.deletedAt
-  const rows = (awaiting.data?.data || []).filter((x) => x.gateStatus === 'AwaitingGate' || (x.type === 'RGP' && x.gateStatus === 'Exited'))
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+  const rows = (awaiting.data?.data || [])
+    .filter((x) => x.gateStatus === 'AwaitingGate' || (x.type === 'RGP' && x.gateStatus === 'Exited'))
+    .filter((x) => {
+      const dStr = x.gateStatus === 'Exited' ? x.expectedReturnDate : (x.decidedAt || x.createdAt)
+      if (!dStr) return true
+      const dObj = new Date(dStr)
+      const d = new Date(dObj.getTime() - dObj.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+      if (fromDate && d < fromDate) return false
+      if (toDate && d > toDate) return false
+      return true
+    })
   const done = p && (['Returned', 'Entered'].includes(p.gateStatus) || (p.gateStatus === 'Exited' && p.type !== 'RGP'))
 
   return (
@@ -76,7 +88,7 @@ export default function Gate() {
                 <dt className="text-slate-500">Party</dt><dd>{p.partyName}</dd>
                 <dt className="text-slate-500">Vehicle</dt><dd className="font-semibold">{p.vehicleNo || '—'}</dd>
                 <dt className="text-slate-500">Driver</dt><dd>{p.driverName || '—'}</dd>
-                <dt className="text-slate-500">Material</dt><dd>{p.items.map((i) => `${i.description} × ${i.quantity} ${i.uom}`).join(', ')}</dd>
+                <dt className="text-slate-500">Value amount</dt><dd>{inr(p.items.reduce((acc, i) => acc + Number(i.approxValue || 0), 0))}</dd>
                 {p.type === 'RGP' && (<><dt className="text-slate-500">Expected return</dt><dd>{fmtDate(p.expectedReturnDate)}</dd></>)}
                 <dt className="text-slate-500">Gate status</dt><dd><Badge tone="neutral">{GATE_STATUS_LABELS[p.gateStatus]}</Badge></dd>
               </dl>
@@ -103,7 +115,21 @@ export default function Gate() {
           )}
         </div>
 
-        <Card title="Expected at the Gate" className="lg:col-span-3" pad={false}>
+        <Card 
+          title="Expected at the Gate" 
+          actions={
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-1.5 text-xs text-slate-500">
+                From <Input type="datetime-local" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="w-auto py-1 text-xs" title="From date and time" />
+              </label>
+              <label className="flex items-center gap-1.5 text-xs text-slate-500">
+                To <Input type="datetime-local" value={toDate} onChange={(e) => setToDate(e.target.value)} className="w-auto py-1 text-xs" title="To date and time" />
+              </label>
+            </div>
+          } 
+          className="lg:col-span-3" 
+          pad={false}
+        >
           {!awaiting.data ? (
             <Loading />
           ) : (

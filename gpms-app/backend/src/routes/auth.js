@@ -5,7 +5,7 @@ import rateLimit from 'express-rate-limit'
 import { config } from '../config.js'
 import { one, query, tx } from '../db.js'
 import { authenticate, signToken } from '../lib/auth.js'
-import { sendEmails } from '../lib/events.js'
+import { sendEmails, audit } from '../lib/events.js'
 import { badRequest, conflict, unauthorized, parse } from '../lib/http.js'
 import { optText, passwordSchema, z } from '../lib/validators.js'
 
@@ -32,13 +32,23 @@ export async function createResetLink(db, userId) {
 
 router.post('/login', limiter, async (req, res) => {
   const { email, password, remember } = parse(z.object({ email: z.email().trim(), password: z.string().min(1).max(200), remember: z.boolean().optional() }), req.body)
-  const u = await one('SELECT id, password_hash, is_active FROM users WHERE lower(email) = lower($1)', [email])
+  const u = await one('SELECT id, name, password_hash, is_active FROM users WHERE lower(email) = lower($1)', [email])
   // Same message for unknown email and wrong password so accounts cannot be enumerated.
   const ok = u?.password_hash && (await bcrypt.compare(password, u.password_hash))
   if (!ok) throw unauthorized('Invalid email or password')
   if (!u.is_active) throw unauthorized('Your account is not active yet. Contact the Super Admin.')
-  await query('UPDATE users SET last_login_at = now() WHERE id = $1', [u.id])
+  await tx(async (db) => {
+    await db.query('UPDATE users SET last_login_at = now() WHERE id = $1', [u.id])
+    await audit(db, { actor: { id: u.id, name: u.name, role: 'user' }, action: 'USER_LOGIN', entityType: 'user', entityRef: email, ip: req.ip })
+  })
   res.json({ token: signToken(u.id, remember), user: await profile(u.id) })
+})
+
+router.post('/logout', authenticate, async (req, res) => {
+  await tx(async (db) => {
+    await audit(db, { actor: req.user, action: 'USER_LOGOUT', entityType: 'user', entityRef: req.user.email, ip: req.ip })
+  })
+  res.json({ message: 'Logged out' })
 })
 
 router.post('/register', limiter, async (req, res) => {

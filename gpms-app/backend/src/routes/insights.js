@@ -31,7 +31,9 @@ dashboardRouter.get('/', async (req, res) => {
   const { rows: activity } = await query(`
     SELECT d::date AS day,
            count(gp.id) FILTER (WHERE gp.gate_pass_type = 'INWARD')::int AS inward,
-           count(gp.id) FILTER (WHERE gp.gate_pass_type IN ('NRGP', 'RGP', 'SCRAP'))::int AS outward
+           count(gp.id) FILTER (WHERE gp.gate_pass_type = 'NRGP')::int AS nrgp,
+           count(gp.id) FILTER (WHERE gp.gate_pass_type = 'RGP')::int AS rgp,
+           count(gp.id) FILTER (WHERE gp.gate_pass_type = 'SCRAP')::int AS scrap
       FROM generate_series(current_date - 6, current_date, interval '1 day') d
       LEFT JOIN gate_passes gp ON gp.deleted_at IS NULL AND gp.created_at >= d AND gp.created_at < d + interval '1 day'
      GROUP BY d ORDER BY d`)
@@ -48,7 +50,7 @@ dashboardRouter.get('/', async (req, res) => {
       awaitingGate: stats.awaiting_gate,
       rgpOverdue: stats.rgp_overdue,
     },
-    activity: activity.map((a) => ({ day: a.day, inward: a.inward, outward: a.outward })),
+    activity: activity.map((a) => ({ day: a.day, inward: a.inward, nrgp: a.nrgp, rgp: a.rgp, scrap: a.scrap })),
   })
 })
 

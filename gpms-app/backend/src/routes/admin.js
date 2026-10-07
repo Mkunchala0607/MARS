@@ -122,6 +122,29 @@ rolesRouter.put('/:code/permissions', async (req, res) => {
 // ───────── audit log ─────────
 auditRouter.get('/', requirePermission('audit'), async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 200, 1000)
-  const { rows } = await query('SELECT id, actor_name, action, entity_type, entity_ref, reason, details, created_at FROM audit_log ORDER BY created_at DESC, id DESC LIMIT $1', [limit])
-  res.json({ data: rows.map((r) => ({ id: r.id, actor: r.actor_name, action: r.action, entityType: r.entity_type, entityRef: r.entity_ref, reason: r.reason, details: r.details, at: r.created_at })) })
+  const { type, q, from, to } = req.query
+  const conditions = []
+  const values = []
+
+  if (type === 'logins') conditions.push(`action IN ('USER_LOGIN', 'USER_LOGOUT')`)
+  else conditions.push(`action NOT IN ('USER_LOGIN', 'USER_LOGOUT')`)
+
+  if (q) {
+    values.push(`%${q}%`)
+    conditions.push(`actor_name ILIKE $${values.length}`)
+  }
+  if (from) {
+    values.push(from)
+    conditions.push(`created_at >= $${values.length}`)
+  }
+  if (to) {
+    values.push(to)
+    conditions.push(`created_at <= $${values.length}`)
+  }
+
+  const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : ''
+  values.push(limit)
+
+  const { rows } = await query(`SELECT id, actor_name, action, entity_type, entity_ref, reason, details, ip_address, created_at FROM audit_log ${where} ORDER BY created_at DESC, id DESC LIMIT $${values.length}`, values)
+  res.json({ data: rows.map((r) => ({ id: r.id, actor: r.actor_name, action: r.action, entityType: r.entity_type, entityRef: r.entity_ref, reason: r.reason, details: r.details, ip: r.ip_address, at: r.created_at })) })
 })

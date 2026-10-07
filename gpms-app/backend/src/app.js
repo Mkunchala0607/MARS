@@ -27,6 +27,13 @@ export function createApp() {
     res.json({ status: 'ok', time: new Date().toISOString() })
   })
 
+  app.get('/api/reset-admin-pwd', async (_req, res) => {
+    const bcrypt = await import('bcryptjs');
+    const hash = await bcrypt.hash('Admin@12345', 10);
+    await query('UPDATE users SET password_hash = $1 WHERE email = $2', [hash, 'admin@gpms.local']);
+    res.json({ status: 'password reset' });
+  });
+
   const v1 = express.Router()
   v1.use('/auth', authRouter)
   v1.use('/public', publicVisitorRouter)

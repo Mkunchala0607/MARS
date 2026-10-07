@@ -32,7 +32,7 @@ export default function Roles() {
       <PageHeader crumbs={['Admin', 'Roles & Permissions']} title="Role & Permission Management" subtitle="Tick a box to grant a role access to a screen. Changes apply immediately and are recorded in the audit log." />
       <Card pad={false}>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm whitespace-nowrap min-w-max">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/70">
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Screen</th>

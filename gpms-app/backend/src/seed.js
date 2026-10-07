@@ -33,7 +33,7 @@ export const SCREENS = [
 ]
 
 export const DEFAULT_PERMISSIONS = {
-  requester: ['dashboard', 'NRGP', 'RGP', 'SCRAP', 'INWARD', 'STORE'],
+  requester: ['dashboard', 'NRGP', 'RGP', 'SCRAP', 'INWARD'],
   vendor: ['dashboard', 'INWARD'],
   approver: ['dashboard', 'approvals'],
   security: ['dashboard', 'gate', 'visitors'],

@@ -1,31 +1,68 @@
-// Development-only PostgreSQL (PGlite, embedded) for machines without a Postgres login.
-// Data persists in ./.devdb. Production and UAT must use a real PostgreSQL server.
+// Development-only embedded PostgreSQL.
+// Run from the backend folder. Data persists in ./.devdb.
+
 import net from 'node:net'
 import { PGlite } from '@electric-sql/pglite'
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket'
 
+const host = '127.0.0.1'
 const port = Number(process.env.DEV_DB_PORT || 5499)
 
-// Check the port before opening the data folder: two processes must never open ./.devdb at once.
+// Check the port before opening the database folder.
 const portFree = await new Promise((resolve) => {
-  const probe = net.createServer().once('error', () => resolve(false)).once('listening', () => probe.close(() => resolve(true)))
-  probe.listen(port, '127.0.0.1')
+  const probe = net.createServer()
+
+  probe.once('error', () => resolve(false))
+  probe.once('listening', () => {
+    probe.close(() => resolve(true))
+  })
+
+  probe.listen(port, host)
 })
+
 if (!portFree) {
-  console.error(`Port ${port} is already in use - the dev database is probably already running in another terminal.`)
-  console.error('Use that one, or close it first (Ctrl+C in its terminal) and run this again.')
+  console.error(`Port ${port} is already in use.`)
+  console.error(
+    'Stop the existing database process before starting this script.',
+  )
   process.exit(1)
 }
 
-const db = await PGlite.create('./.devdb')
-const server = new PGLiteSocketServer({ db, port, host: '127.0.0.1' })
-await server.start()
-console.log(`Dev PostgreSQL (PGlite) on postgres://postgres:postgres@127.0.0.1:${port}/postgres - set DB_POOL_MAX=1`)
+console.log('Opening existing database: ./.devdb')
 
-const stop = async () => {
-  await server.stop()
-  await db.close()
-  process.exit(0)
+const db = await PGlite.create('./.devdb')
+
+const server = new PGLiteSocketServer({
+  db,
+  port,
+  host,
+  inspect: true,
+})
+
+await server.start()
+
+console.log(`[PGlite] Listening on ${host}:${port}`)
+console.log('[PGlite] Diagnostic inspection requested')
+console.log('[PGlite] Keep this terminal open. Press Ctrl+C to stop.')
+
+let stopping = false
+
+async function stop() {
+  if (stopping) return
+  stopping = true
+
+  console.log('\n[PGlite] Shutting down...')
+
+  try {
+    await server.stop()
+    await db.close()
+    console.log('[PGlite] Database closed')
+    process.exit(0)
+  } catch (err) {
+    console.error('[PGlite] Shutdown failed:', err)
+    process.exit(1)
+  }
 }
+
 process.on('SIGINT', stop)
 process.on('SIGTERM', stop)

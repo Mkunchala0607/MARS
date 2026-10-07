@@ -132,19 +132,19 @@ export default function PassDetail() {
 
           <Card title="Material Details" pad={false}>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="w-full text-left text-sm whitespace-nowrap min-w-max">
                 <thead>
                   <tr className="border-b bg-slate-50/70 text-xs text-slate-500 uppercase">
-                    <th className="px-5 py-2">#</th><th>Description</th><th>Unit</th><th className="text-right">Qty</th><th className="text-right">Value</th><th className="px-5">Remarks</th>
+                    <th className="px-5 py-2">#</th><th>Description</th><th>Unit</th><th className="text-right">Qty</th><th className="text-right">Unit Price</th><th className="text-right">Value</th><th className="px-5">Remarks</th>
                   </tr>
                 </thead>
                 <tbody>
                   {p.items.map((it) => (
                     <tr key={it.id} className="border-b border-slate-100">
-                      <td className="px-5 py-2.5">{it.lineNo}</td><td>{it.description}</td><td>{it.uom}</td><td className="text-right">{it.quantity}</td><td className="text-right">{inr(it.approxValue)}</td><td className="px-5 text-slate-500">{it.remarks}</td>
+                      <td className="px-5 py-2.5">{it.lineNo}</td><td>{it.description}</td><td>{it.uom}</td><td className="text-right">{it.quantity}</td><td className="text-right">{it.quantity && it.approxValue ? inr(it.approxValue / it.quantity) : '-'}</td><td className="text-right">{inr(it.approxValue)}</td><td className="px-5 text-slate-500">{it.remarks}</td>
                     </tr>
                   ))}
-                  <tr><td colSpan={4} className="px-5 py-3 text-right font-semibold">Total Approx. Value</td><td className="text-right font-bold">{inr(p.totalValue)}</td><td /></tr>
+                  <tr><td colSpan={5} className="px-5 py-3 text-right font-semibold">Total Approx. Value</td><td className="text-right font-bold">{inr(p.totalValue)}</td><td /></tr>
                 </tbody>
               </table>
             </div>

@@ -51,12 +51,12 @@ export default function Reports() {
         ) : !data.data ? (
           <Loading />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="w-full overflow-x-auto">
             <div className="px-5 py-2 text-xs text-slate-500">{data.data.rows.length} record(s)</div>
-            <table className="w-full text-left text-sm">
+            <table className="w-full text-left text-sm whitespace-nowrap min-w-max">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/70 text-xs text-slate-500 uppercase">
-                  {data.data.columns.map((c) => <th key={c} className="px-4 py-2.5 font-medium whitespace-nowrap">{c}</th>)}
+                <tr className="border-b border-slate-200 bg-slate-50/70 text-[10px] text-slate-500 uppercase">
+                  {data.data.columns.map((c) => <th key={c} className="px-2 py-2 font-medium">{c}</th>)}
                 </tr>
               </thead>
               <tbody>

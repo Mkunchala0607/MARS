@@ -60,7 +60,8 @@ export default function App() {
         <Route path="visitors" element={<Guard screen="visitors"><Visitors /></Guard>} />
         <Route path="weighbridge" element={<Guard screen="weighbridge"><Weighbridge /></Guard>} />
         <Route path="direct" element={<Guard screen="direct"><Direct /></Guard>} />
-        <Route path="masters" element={<Guard screen="masters"><Masters /></Guard>} />
+        <Route path="masters" element={<Navigate to="/masters/materials" replace />} />
+        <Route path="masters/:kind" element={<Guard screen="masters"><Masters /></Guard>} />
         <Route path="reports" element={<Guard screen="reports"><Reports /></Guard>} />
         <Route path="audit" element={<Guard screen="audit"><Audit /></Guard>} />
         <Route path="users" element={<Guard screen="users"><Users /></Guard>} />

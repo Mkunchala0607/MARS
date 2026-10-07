@@ -77,7 +77,7 @@ export default function Dashboard() {
   }
 
   const s = dash.data.stats
-  const chart = dash.data.activity.map((a) => ({ day: new Date(a.day).toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit' }), Inward: a.inward, Outward: a.outward }))
+  const chart = dash.data.activity.map((a) => ({ day: new Date(a.day).toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit' }), Inward: a.inward, NRGP: a.nrgp, RGP: a.rgp, Scrap: a.scrap }))
   const actions = [
     can('approvals') && { label: `Review approvals (${s.pendingApprovals})`, icon: CheckSquare, to: '/approvals' },
     can('gate') && { label: 'Scan / verify pass', icon: QrCode, to: '/gate' },
@@ -106,7 +106,9 @@ export default function Dashboard() {
                 <Tooltip cursor={{ fill: '#f1f5f9' }} />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
                 <Bar dataKey="Inward" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Outward" fill="#4b45e0" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="NRGP" stackId="outward" fill="#4b45e0" />
+                <Bar dataKey="RGP" stackId="outward" fill="#6366f1" />
+                <Bar dataKey="Scrap" stackId="outward" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

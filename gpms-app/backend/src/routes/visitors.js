@@ -69,6 +69,10 @@ const applySchema = z
     path: ['health', 'details'],
     message: 'Please give brief details',
   })
+  .refine((d) => d.signatureName === d.name, {
+    path: ['signatureName'],
+    message: 'Signature must match your name exactly',
+  })
 
 publicRouter.post('/visitors', limiter, async (req, res) => {
   const d = parse(applySchema, req.body)

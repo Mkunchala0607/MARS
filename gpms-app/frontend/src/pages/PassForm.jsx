@@ -233,7 +233,7 @@ export default function PassForm() {
               {f.items.map((it, i) => (
                 <div key={i} className="grid gap-2 rounded-lg border border-slate-200 p-3 sm:grid-cols-12 sm:items-start">
                   <div className="text-xs font-semibold text-slate-400 sm:col-span-12">Item {i + 1}</div>
-                  <Field label="Material (from master)" className="sm:col-span-4">
+                  <Field label="Material (from master)" className="sm:col-span-3">
                     <Select
                       placeholder="— or type a description →"
                       value={it.materialId}
@@ -244,7 +244,7 @@ export default function PassForm() {
                       options={materialList.map((m) => ({ value: m.id, label: `${m.code} — ${m.description}` }))}
                     />
                   </Field>
-                  <Field label="Description of Material" required error={errors[`items.${i}.description`]} className="sm:col-span-4"><Input value={it.description} onChange={(e) => setItem(i, { description: e.target.value })} /></Field>
+                  <Field label="Description of Material" required error={errors[`items.${i}.description`]} className="sm:col-span-3"><Input value={it.description} onChange={(e) => setItem(i, { description: e.target.value })} /></Field>
                   <Field label="Unit" required className="sm:col-span-1"><Select value={it.uom} onChange={(e) => setItem(i, { uom: e.target.value })} options={UNITS} /></Field>
                   <Field label="Qty" required error={errors[`items.${i}.quantity`]} className="sm:col-span-1">
                     <Input
@@ -256,6 +256,15 @@ export default function PassForm() {
                         const m = materialList.find((x) => x.id === Number(it.materialId))
                         setItem(i, { quantity: e.target.value, ...(m?.defaultRate ? { approxValue: m.defaultRate * Number(e.target.value || 0) } : {}) })
                       }}
+                    />
+                  </Field>
+                  <Field label="Unit Price (₹)" className="sm:col-span-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={it.quantity && it.approxValue ? Number((it.approxValue / it.quantity).toFixed(2)) : ''}
+                      onChange={(e) => setItem(i, { approxValue: Number(e.target.value) * Number(it.quantity || 0) })}
                     />
                   </Field>
                   <Field label="Approx. Value (₹)" required error={errors[`items.${i}.approxValue`]} className="sm:col-span-2"><Input type="number" min="0" step="any" value={it.approxValue} onChange={(e) => setItem(i, { approxValue: e.target.value })} /></Field>
@@ -332,15 +341,17 @@ export default function PassForm() {
                   </div>
                 ))}
             </dl>
-            <table className="w-full text-left">
-              <thead><tr className="border-b text-xs text-slate-500 uppercase"><th className="py-2">#</th><th>Description</th><th>Unit</th><th className="text-right">Qty</th><th className="text-right">Value</th></tr></thead>
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left whitespace-nowrap min-w-max">
+              <thead><tr className="border-b text-xs text-slate-500 uppercase"><th className="py-2">#</th><th>Description</th><th>Unit</th><th className="text-right">Qty</th><th className="text-right">Unit Price</th><th className="text-right">Value</th></tr></thead>
               <tbody>
                 {f.items.map((it, i) => (
-                  <tr key={i} className="border-b border-slate-100"><td className="py-2">{i + 1}</td><td>{it.description}</td><td>{it.uom}</td><td className="text-right">{it.quantity}</td><td className="text-right">{inr(it.approxValue)}</td></tr>
+                  <tr key={i} className="border-b border-slate-100"><td className="py-2">{i + 1}</td><td>{it.description}</td><td>{it.uom}</td><td className="text-right">{it.quantity}</td><td className="text-right">{it.quantity && it.approxValue ? inr(it.approxValue / it.quantity) : '-'}</td><td className="text-right">{inr(it.approxValue)}</td></tr>
                 ))}
-                <tr><td colSpan={4} className="py-2 text-right font-semibold">Total</td><td className="text-right font-bold">{inr(total)}</td></tr>
+                <tr><td colSpan={5} className="py-2 text-right font-semibold">Total</td><td className="text-right font-bold">{inr(total)}</td></tr>
               </tbody>
-            </table>
+              </table>
+            </div>
             {direct && (
               <Field label="Reason for direct entry" required error={errors.directReason} hint="Written to the audit log with your name and time">
                 <Textarea value={reason} onChange={(e) => setReason(e.target.value)} />

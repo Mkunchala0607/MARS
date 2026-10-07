@@ -7,12 +7,9 @@ import { Button, Field, Input, Modal } from '../components/ui.jsx'
 
 function Brand() {
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white font-bold text-brand-700">M</div>
-      <div className="leading-tight">
-        <div className="font-bold tracking-wide">MARS</div>
-        <div className="text-xs text-white/70">GATE PASS MANAGEMENT</div>
-      </div>
+    <div>
+      <img src="https://www.mars.com/themes/custom/mars_acss/assets/images/logo-main.svg" alt="MARS" className="h-9 brightness-0 invert" />
+      <div className="mt-2 text-[11px] font-semibold tracking-wider text-white/90">GATE PASS MANAGEMENT SYSTEM</div>
     </div>
   )
 }
@@ -20,21 +17,18 @@ function Brand() {
 function Shell({ children }) {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-navy-900 via-[#23208f] to-brand-500 p-12 text-white lg:flex">
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-[#1e1c59] via-[#23208f] to-[#4c4cf1] p-12 text-white lg:flex">
         <Brand />
         <div>
-          <h1 className="max-w-md text-4xl leading-tight font-bold">Secure, seamless gate operations — from entry to exit.</h1>
-          <p className="mt-4 max-w-md text-white/75">One platform for security officers, plant employees, vendors and visitors to manage gate passes, approvals and weighbridge operations.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {['Security Officer', 'Approver', 'Store Person', 'Visitor'].map((t) => (
-            <span key={t} className="rounded-full bg-white/10 px-3 py-1 text-xs ring-1 ring-white/20">{t}</span>
-          ))}
+          <h1 className="max-w-md text-[40px] leading-[1.15] font-bold">Secure, seamless gate operations from entry to exit.</h1>
+          <p className="mt-6 max-w-[420px] text-[15px] leading-relaxed text-white/80">One platform for security officers, plant employees, vendors and visitors to manage gate passes, approvals and weighbridge operations.</p>
         </div>
       </div>
       <div className="flex items-center justify-center bg-white p-6">
         <div className="w-full max-w-md">
-          <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-600 text-lg font-bold text-white lg:hidden">M</div>
+          <div className="mb-8 lg:hidden">
+            <img src="https://www.mars.com/themes/custom/mars_acss/assets/images/logo-main.svg" alt="MARS" className="h-8" />
+          </div>
           {children}
         </div>
       </div>

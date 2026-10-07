@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, useApi } from '../api.js'
+import { api, qs, useApi } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import { ROLE_LABELS } from '../constants.js'
-import { Badge, Button, Card, ErrorState, Field, Input, Loading, PageHeader, Table, fmtDateTime } from '../components/ui.jsx'
+import { Badge, Button, Card, ErrorState, Field, Input, Loading, PageHeader, Table, fmtDateTime, Tabs } from '../components/ui.jsx'
 
 const ACTION_LABELS = {
   DIRECT_CREATE: 'Direct create',
@@ -16,16 +16,39 @@ const ACTION_LABELS = {
 }
 
 export function Audit() {
-  const { data, error, reload } = useApi('/audit')
+  const [tab, setTab] = useState('audit')
+  const [filters, setFilters] = useState({ q: '', from: '', to: '' })
+  
+  const query = qs({ type: tab === 'logins' ? 'logins' : '', ...filters })
+  const { data, error, reload } = useApi(`/audit${query}`)
+  
   if (error) return <ErrorState error={error} onRetry={reload} />
+  
   return (
     <>
       <PageHeader crumbs={['Admin', 'Audit Log']} title="Audit Log" subtitle="Every elevated action — who, when, what and why. Entries cannot be edited." />
+      
+      <Card className="mb-6">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="Search by Name"><Input placeholder="Actor name..." value={filters.q} onChange={(e) => setFilters({ ...filters, q: e.target.value })} /></Field>
+          <Field label="From Date/Time"><Input type="datetime-local" value={filters.from} max={filters.to} onChange={(e) => setFilters({ ...filters, from: e.target.value })} /></Field>
+          <Field label="To Date/Time"><Input type="datetime-local" value={filters.to} min={filters.from} onChange={(e) => setFilters({ ...filters, to: e.target.value })} /></Field>
+        </div>
+      </Card>
+
       <Card pad={false}>
+        <div className="px-5 pt-1">
+          <Tabs value={tab} onChange={setTab} tabs={[{ value: 'audit', label: 'General Audit Log' }, { value: 'logins', label: 'Login History' }]} />
+        </div>
         {!data ? <Loading /> : (
           <Table
             rows={data.data}
-            columns={[
+            columns={tab === 'logins' ? [
+              { key: 'at', label: 'When', render: (a) => fmtDateTime(a.at), className: 'whitespace-nowrap' },
+              { key: 'actor', label: 'Who' },
+              { key: 'action', label: 'Action', render: (a) => <Badge tone={a.action === 'USER_LOGOUT' ? 'neutral' : 'success'}>{a.action === 'USER_LOGIN' ? 'Login' : 'Logout'}</Badge> },
+              { key: 'ip', label: 'IP Address', render: (a) => a.ip || '—' },
+            ] : [
               { key: 'at', label: 'When', render: (a) => fmtDateTime(a.at), className: 'whitespace-nowrap' },
               { key: 'actor', label: 'Who' },
               { key: 'action', label: 'Action', render: (a) => <Badge tone={a.action === 'DELETE' || a.action === 'USER_DEACTIVATE' ? 'Rejected' : 'Direct'}>{ACTION_LABELS[a.action] || a.action}</Badge> },

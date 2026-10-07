@@ -1,9 +1,10 @@
 import { useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { Pencil, Plus } from 'lucide-react'
 import { api, useApi } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import { UNITS } from '../constants.js'
-import { Badge, Button, Card, ErrorState, Field, Input, Loading, Modal, PageHeader, Select, Table, Tabs } from '../components/ui.jsx'
+import { Badge, Button, Card, ErrorState, Field, Input, Loading, Modal, PageHeader, Select, Table } from '../components/ui.jsx'
 
 // Field lists follow "Master Data and Tech Stack for MARS.docx". Keys match the API.
 const MASTERS = {
@@ -77,7 +78,7 @@ const COLUMN_LABELS = { parentContractorName: 'Parent Contractor' }
 
 export default function Masters() {
   const { toast } = useAuth()
-  const [kind, setKind] = useState('materials')
+  const { kind = 'materials' } = useParams()
   const [q, setQ] = useState('')
   const [edit, setEdit] = useState(null)
   const [errors, setErrors] = useState({})
@@ -112,11 +113,11 @@ export default function Masters() {
 
   return (
     <>
-      <PageHeader crumbs={['Store', 'Master Data']} title="Master Data" subtitle="Reference lists that feed every gate pass form." actions={<Button icon={Plus} onClick={() => { setErrors({}); setEdit({}) }}>Add {cfg.label}</Button>} />
+      <PageHeader crumbs={['Master Data', cfg.label]} title={`Master Data: ${cfg.label}`} subtitle="Reference lists that feed every gate pass form." actions={<Button icon={Plus} onClick={() => { setErrors({}); setEdit({}) }}>Add {cfg.label}</Button>} />
       <Card pad={false}>
-        <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-1">
-          <Tabs value={kind} onChange={(k) => { setKind(k); setQ('') }} tabs={Object.entries(MASTERS).map(([k, m]) => ({ value: k, label: m.label }))} />
-          <div className="w-full pb-2 sm:w-64"><Input placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-3 pb-2">
+          <div className="text-sm font-semibold text-slate-700">{cfg.label} List</div>
+          <div className="w-full sm:w-64"><Input placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
         </div>
         {list.error ? <ErrorState error={list.error} onRetry={list.reload} /> : !list.data ? <Loading /> : (
           <Table

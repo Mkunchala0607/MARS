@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   ArrowDownToLine, ArrowLeftRight, BarChart3, Bell, CheckSquare, ClipboardList, Database, DoorOpen, FileBarChart, FileOutput, FileX, History,
-  LayoutDashboard, LogOut, Menu, Scale, Search, ShieldCheck, UserCircle, Users, Zap, Undo2, UserSquare2,
+  LayoutDashboard, LogOut, Menu, Scale, Search, ShieldCheck, UserCircle, Users, Zap, Undo2, UserSquare2, Package, Truck, Briefcase, Wrench
 } from 'lucide-react'
 import { api, qs, useApi } from '../api.js'
 import { useAuth } from '../auth.jsx'
@@ -34,8 +34,17 @@ const NAV = [
     items: [
       { id: 'weighbridge', to: '/weighbridge', label: 'Weighbridge', icon: Scale },
       { id: 'direct', to: '/direct', label: 'Direct Gate Pass', icon: Zap },
-      { id: 'masters', to: '/masters', label: 'Master Data', icon: Database },
       { id: 'reports', to: '/reports', label: 'Reports & Export', icon: FileBarChart },
+    ],
+  },
+  {
+    group: 'Master Data',
+    items: [
+      { id: 'masters', to: '/masters/materials', label: 'Material / Item', icon: Package },
+      { id: 'masters', to: '/masters/vendors', label: 'Vendor', icon: Truck },
+      { id: 'masters', to: '/masters/contractors', label: 'Contractor', icon: Briefcase },
+      { id: 'masters', to: '/masters/sub-contractors', label: 'Sub-Contractor', icon: Users },
+      { id: 'masters', to: '/masters/service-vendors', label: 'Service Vendor', icon: Wrench },
     ],
   },
   {
@@ -98,12 +107,9 @@ export default function Layout() {
 
   const sidebar = (
     <nav className="flex h-full flex-col bg-navy-900 text-slate-300">
-      <div className="flex items-center gap-3 px-5 py-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white font-bold text-brand-700">M</div>
-        <div className="leading-tight">
-          <div className="font-bold tracking-wide text-white">MARS</div>
-          <div className="text-[10px] tracking-wider text-slate-400 uppercase">Gate Pass System</div>
-        </div>
+      <div className="flex flex-col items-start px-5 py-5">
+        <img src="https://www.mars.com/themes/custom/mars_acss/assets/images/logo-main.svg" alt="MARS" className="h-9 w-auto brightness-0 invert" />
+        <div className="mt-1 pl-[2px] text-[10px] tracking-widest font-semibold text-slate-400 uppercase">Gate Pass System</div>
       </div>
       <div className="flex-1 space-y-5 overflow-y-auto px-3 pb-6">
         {NAV.map((sec) => {
@@ -158,15 +164,19 @@ export default function Layout() {
           <button className="rounded p-1.5 text-slate-600 hover:bg-slate-100 lg:hidden" onClick={() => setOpen(true)}>
             <Menu size={20} />
           </button>
-          <form onSubmit={search} className="relative hidden max-w-sm flex-1 sm:block">
-            <Search size={16} className="absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search gate pass no. or vehicle no…"
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pr-3 pl-9 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
-            />
-          </form>
+          {user.role !== 'security' ? (
+            <form onSubmit={search} className="relative hidden max-w-sm flex-1 sm:block">
+              <Search size={16} className="absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search gate pass no. or vehicle no…"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pr-3 pl-9 text-sm focus:border-brand-500 focus:bg-white focus:outline-none"
+              />
+            </form>
+          ) : (
+            <div className="flex-1" />
+          )}
           <div className="ml-auto flex items-center gap-2">
             <div className="relative">
               <button className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100" onClick={() => { setBell(!bell); setMenu(false) }}>

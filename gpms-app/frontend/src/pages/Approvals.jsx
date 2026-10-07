@@ -120,7 +120,7 @@ function PassQueue({ onChanged }) {
                 detail.data.type === 'RGP' && ['Expected Return', detail.data.expectedReturnDate],
                 detail.data.type === 'INWARD' && ['PO No.', detail.data.poNumber],
                 detail.data.type !== 'STORE' && ['Vehicle', detail.data.vehicleNo],
-                ['Items', detail.data.items.map((i) => `${i.description} × ${i.quantity} ${i.uom}`).join('; ')],
+                detail.data.type !== 'RGP' && ['Items', detail.data.items.map((i) => `${i.description} × ${i.quantity} ${i.uom}`).join('; ')],
                 ['Amount', inr(detail.data.totalValue)],
               ]
                 .filter(Boolean)
@@ -131,7 +131,7 @@ function PassQueue({ onChanged }) {
                   </div>
                 ))}
             </dl>
-            <Link to={`/pass/${detail.data.id}`} className="mt-2 inline-block text-xs text-brand-600 hover:underline">Open full gate pass →</Link>
+            <Link to={`/pass/${detail.data.id}`} className="mt-2 inline-block text-xs text-brand-600 hover:underline">View more details →</Link>
             <div className="mt-5 mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase">Approval Timeline</div>
             <Timeline items={detail.data.timeline} />
             {detail.data.status === 'Pending' && (mine(detail.data) ? <p className="mt-4 text-sm text-slate-500">You raised this request, so another approver must review it.</p> : <DecisionButtons key={detail.data.id} onDecide={decide} busy={busy} />)}

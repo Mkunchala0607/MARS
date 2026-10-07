@@ -48,6 +48,7 @@ export default function VisitorApply() {
     if (anyYes && !f.details.trim()) er['health.details'] = 'Please give brief details'
     if (!f.gmpAcknowledged) er.gmpAcknowledged = 'You must accept the GMP guidelines'
     if (!f.signatureName.trim()) er.signatureName = 'Type your full name as signature'
+    else if (f.signatureName.trim() !== f.name.trim()) er.signatureName = 'Signature must match your name exactly'
     setErrors(er)
     if (Object.keys(er).length) return
     setBusy(true)
@@ -68,7 +69,7 @@ export default function VisitorApply() {
     <div className="min-h-screen bg-slate-50 px-4 py-8">
       <div className="mx-auto max-w-2xl">
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-600 font-bold text-white">M</div>
+          <img src="https://www.mars.com/themes/custom/mars_acss/assets/images/logo-main.svg" alt="MARS" className="h-8" />
           <div>
             <div className="font-bold text-slate-900">MARS — Visitor Gate Pass</div>
             <div className="text-xs text-slate-500">Visitor entry & Health Declaration (FORM-1839)</div>
