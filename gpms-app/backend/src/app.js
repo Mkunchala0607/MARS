@@ -14,6 +14,7 @@ import { dashboardRouter, notificationsRouter, reportsRouter } from './routes/in
 import mastersRouter from './routes/masters.js'
 import { publicRouter as publicVisitorRouter, router as visitorRouter } from './routes/visitors.js'
 import weighbridgeRouter from './routes/weighbridge.js'
+import { router as registersRouter, REGISTERS_META, SCHEMA } from './routes/registers.js'
 
 export function createApp() {
   const app = express()
@@ -41,6 +42,8 @@ export function createApp() {
   v1.use('/gate-passes', gatePassRouter)
   v1.use('/visitors', visitorRouter)
   v1.use('/weighbridge', weighbridgeRouter)
+  v1.get('/registers/meta', (req, res) => res.json({ registers: REGISTERS_META, schema: SCHEMA }))
+  v1.use('/registers', registersRouter)
   v1.use('/masters', mastersRouter)
   v1.use('/users', usersRouter)
   v1.use('/roles', rolesRouter)
@@ -49,7 +52,7 @@ export function createApp() {
   v1.use('/reports', reportsRouter)
   v1.use('/notifications', notificationsRouter)
   app.use('/api/v1', v1)
-  app.use('/api', (_req, _res, next) => next(notFound('API route not found')))
+  app.use('/api', (req, res, next) => { console.log('404 on:', req.method, req.originalUrl); next(notFound('API route not found')); })
 
   // Optional single-server deployment: serve the built frontend from the same origin.
   const dist = path.resolve(process.env.FRONTEND_DIST || '../frontend/dist')

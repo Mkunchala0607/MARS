@@ -13,13 +13,13 @@ export const auditRouter = Router()
 
 // ───────── users ─────────
 const USER_SELECT = `
-  SELECT u.id, u.name, u.email, u.department, u.phone, u.vendor_id, u.is_active, u.self_registered, u.last_login_at, u.created_at,
+  SELECT u.id, u.name, u.email, u.department, u.phone, u.vendor_id, u.is_active, u.self_registered, u.last_login_at, u.created_at, u.gate_permissions,
          r.code AS role, r.name AS role_name, v.name AS vendor_name
     FROM users u JOIN roles r ON r.id = u.role_id LEFT JOIN vendors v ON v.id = u.vendor_id`
 
 const toUser = (r) => ({
   id: r.id, name: r.name, email: r.email, department: r.department, phone: r.phone, role: r.role, roleName: r.role_name,
-  vendorId: r.vendor_id, vendorName: r.vendor_name, isActive: r.is_active, selfRegistered: r.self_registered, lastLoginAt: r.last_login_at, createdAt: r.created_at,
+  vendorId: r.vendor_id, vendorName: r.vendor_name, isActive: r.is_active, selfRegistered: r.self_registered, lastLoginAt: r.last_login_at, createdAt: r.created_at, gatePermissions: r.gate_permissions || [],
 })
 
 const userSchema = z
@@ -30,6 +30,7 @@ const userSchema = z
     department: optText(100),
     phone: optText(30),
     vendorId: z.coerce.number().int().positive().optional().nullable(),
+    gatePermissions: z.array(z.string()).optional(),
   })
   .refine((d) => d.role !== 'vendor' || d.vendorId, { path: ['vendorId'], message: 'Registered persons must be linked to a vendor' })
 
@@ -43,8 +44,8 @@ usersRouter.post('/', async (req, res) => {
   const d = parse(userSchema, req.body)
   const result = await tx(async (db) => {
     const { rows } = await db.query(
-      `INSERT INTO users (name, email, role_id, department, phone, vendor_id) SELECT $1, $2, id, $3, $4, $5 FROM roles WHERE code = $6 RETURNING id`,
-      [d.name, d.email, d.department, d.phone, d.role === 'vendor' ? d.vendorId : null, d.role],
+      `INSERT INTO users (name, email, role_id, department, phone, vendor_id, gate_permissions) SELECT $1, $2, id, $3, $4, $5, $7 FROM roles WHERE code = $6 RETURNING id`,
+      [d.name, d.email, d.department, d.phone, d.role === 'vendor' ? d.vendorId : null, d.role, d.gatePermissions || []],
     )
     // New users set their own password through an emailed invite link.
     const link = await createResetLink(db, rows[0].id)
@@ -57,14 +58,16 @@ usersRouter.post('/', async (req, res) => {
 
 usersRouter.put('/:id', async (req, res) => {
   const id = idParam(req.params.id)
+  console.log("PUT /users/:id", req.body)
   const d = parse(userSchema, req.body)
+  console.log("Parsed:", d)
   if (id === req.user.id && d.role !== req.user.role) throw badRequest('You cannot change your own role')
   await tx(async (db) => {
     const before = (await db.query(`SELECT r.code AS role FROM users u JOIN roles r ON r.id = u.role_id WHERE u.id = $1`, [id])).rows[0]
     if (!before) throw notFound('User not found')
     await db.query(
-      `UPDATE users SET name = $1, email = $2, role_id = (SELECT id FROM roles WHERE code = $3), department = $4, phone = $5, vendor_id = $6, updated_at = now() WHERE id = $7`,
-      [d.name, d.email, d.role, d.department, d.phone, d.role === 'vendor' ? d.vendorId : null, id],
+      `UPDATE users SET name = $1, email = $2, role_id = (SELECT id FROM roles WHERE code = $3), department = $4, phone = $5, vendor_id = $6, gate_permissions = $7, updated_at = now() WHERE id = $8`,
+      [d.name, d.email, d.role, d.department, d.phone, d.role === 'vendor' ? d.vendorId : null, d.gatePermissions || [], id],
     )
     if (before.role !== d.role) await audit(db, { actor: req.user, action: 'USER_ROLE_CHANGE', entityType: 'user', entityRef: d.email, details: { from: before.role, to: d.role }, ip: req.ip })
   })

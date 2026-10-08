@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './auth.jsx'
 import Layout from './components/Layout.jsx'
-import { Card, Loading } from './components/ui.jsx'
+import { Card, Loading, Modal, Button } from './components/ui.jsx'
 import Analytics from './pages/Analytics.jsx'
 import Approvals from './pages/Approvals.jsx'
 import Dashboard from './pages/Dashboard.jsx'
@@ -13,6 +13,7 @@ import { Audit, Notifications, Profile } from './pages/Misc.jsx'
 import PassDetail from './pages/PassDetail.jsx'
 import PassForm from './pages/PassForm.jsx'
 import PassList from './pages/PassList.jsx'
+import Registers from './pages/Registers.jsx'
 import Reports from './pages/Reports.jsx'
 import Roles from './pages/Roles.jsx'
 import Users from './pages/Users.jsx'
@@ -35,10 +36,13 @@ function Guard({ screen, children }) {
 }
 
 function RequireAuth() {
-  const { user, booting } = useAuth()
+  const { user, booting, activeGate, setActiveGate, logout } = useAuth()
   const location = useLocation()
   if (booting) return <Loading label="Signing you in…" />
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />
+
+
+
   return <Layout />
 }
 
@@ -57,6 +61,7 @@ export default function App() {
         <Route path="pass/:id" element={<PassDetail />} />
         <Route path="approvals" element={<Guard screen="approvals"><Approvals /></Guard>} />
         <Route path="gate" element={<Guard screen="gate"><Gate /></Guard>} />
+        <Route path="registers" element={<Registers />} />
         <Route path="visitors" element={<Guard screen="visitors"><Visitors /></Guard>} />
         <Route path="weighbridge" element={<Guard screen="weighbridge"><Weighbridge /></Guard>} />
         <Route path="direct" element={<Guard screen="direct"><Direct /></Guard>} />

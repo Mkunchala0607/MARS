@@ -81,6 +81,7 @@ export default function Dashboard() {
   const actions = [
     can('approvals') && { label: `Review approvals (${s.pendingApprovals})`, icon: CheckSquare, to: '/approvals' },
     can('gate') && { label: 'Scan / verify pass', icon: QrCode, to: '/gate' },
+    can('gate_registers') && { label: 'Switch Gate', icon: ArrowLeftRight, to: '/registers' },
     can('weighbridge') && { label: 'Weighbridge entry', icon: Scale, to: '/weighbridge' },
     can('visitors') && { label: 'Visitor register', icon: Users, to: '/visitors' },
     can('direct') && { label: 'Direct gate pass', icon: DoorOpen, to: '/direct' },

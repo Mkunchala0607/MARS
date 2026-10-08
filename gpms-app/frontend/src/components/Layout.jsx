@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   ArrowDownToLine, ArrowLeftRight, BarChart3, Bell, CheckSquare, ClipboardList, Database, DoorOpen, FileBarChart, FileOutput, FileX, History,
-  LayoutDashboard, LogOut, Menu, Scale, Search, ShieldCheck, UserCircle, Users, Zap, Undo2, UserSquare2, Package, Truck, Briefcase, Wrench
+  LayoutDashboard, LogOut, Menu, Scale, Search, ShieldCheck, UserCircle, Users, Zap, Undo2, UserSquare2, Package, Truck, Briefcase, Wrench, Lock
 } from 'lucide-react'
 import { api, qs, useApi } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import { ROLE_LABELS } from '../constants.js'
-import { fmtDateTime } from './ui.jsx'
+import { fmtDateTime, Modal, Button } from './ui.jsx'
 
 const NAV = [
   { group: 'Main', items: [{ id: 'dashboard', to: '/', label: 'Dashboard', icon: LayoutDashboard }] },
@@ -27,6 +27,7 @@ const NAV = [
     items: [
       { id: 'gate', to: '/gate', label: 'Gate Entry / Exit', icon: DoorOpen },
       { id: 'visitors', to: '/visitors', label: 'Visitor Register', icon: UserSquare2 },
+      { id: 'gate_registers', to: '/registers', label: 'Registers', icon: DoorOpen },
     ],
   },
   {
@@ -59,12 +60,13 @@ const NAV = [
 ]
 
 export default function Layout() {
-  const { user, can, logout, toast } = useAuth()
+  const { user, can, logout, toast, activeGate, setActiveGate } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [open, setOpen] = useState(false)
   const [bell, setBell] = useState(false)
   const [menu, setMenu] = useState(false)
+  const [switchGate, setSwitchGate] = useState(false)
   const [q, setQ] = useState('')
   const notes = useApi('/notifications')
 
@@ -109,11 +111,11 @@ export default function Layout() {
     <nav className="flex h-full flex-col bg-navy-900 text-slate-300">
       <div className="flex flex-col items-start px-5 py-5">
         <img src="https://www.mars.com/themes/custom/mars_acss/assets/images/logo-main.svg" alt="MARS" className="h-9 w-auto brightness-0 invert" />
-        <div className="mt-1 pl-[2px] text-[10px] tracking-widest font-semibold text-slate-400 uppercase">Gate Pass System</div>
+        <div className="mt-1 pl-[2px] text-[10px] tracking-widest font-semibold text-slate-400 uppercase">Gate Pass <br />Management System</div>
       </div>
       <div className="flex-1 space-y-5 overflow-y-auto px-3 pb-6">
         {NAV.map((sec) => {
-          const items = sec.items.filter((i) => can(i.id))
+          const items = sec.items.filter((i) => i.id === 'gate_registers' || can(i.id))
           if (!items.length) return null
           return (
             <div key={sec.group}>
@@ -175,7 +177,9 @@ export default function Layout() {
               />
             </form>
           ) : (
-            <div className="flex-1" />
+            <div className="flex-1 flex items-center gap-2">
+              {activeGate && <span className="rounded-full bg-brand-50 px-3 py-1 text-xs text-brand-700 font-semibold">{activeGate} Active</span>}
+            </div>
           )}
           <div className="ml-auto flex items-center gap-2">
             <div className="relative">
@@ -216,6 +220,11 @@ export default function Layout() {
                   <button className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-slate-50" onClick={() => navigate('/profile')}>
                     <UserCircle size={15} /> My Profile
                   </button>
+                  {user.role === 'security' && (
+                    <button className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-slate-50" onClick={() => { setSwitchGate(true) }}>
+                      <DoorOpen size={15} /> Switch Gate
+                    </button>
+                  )}
                   <button className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-slate-50" onClick={() => { logout(); navigate('/login') }}>
                     <LogOut size={15} /> Sign out
                   </button>
@@ -231,6 +240,53 @@ export default function Layout() {
           <ClipboardList size={12} className="mr-1 inline" /> MARS International India Pvt. Ltd. · Gate Pass Management System
         </footer>
       </div>
+
+      {((user.role === 'security' && !activeGate) || switchGate) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-100 flex flex-col">
+            <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800 tracking-tight">Select Security Gate</h2>
+                <p className="text-sm text-slate-500 mt-1">Choose your assigned post to continue.</p>
+              </div>
+              {activeGate && (
+                <button onClick={() => setSwitchGate(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              )}
+            </div>
+            <div className="p-8">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {['Gate 1', 'Gate 2', 'Gate 3'].map((g) => {
+                  const allowed = user.gatePermissions?.includes(g)
+                  return (
+                    <button
+                      key={g}
+                      disabled={!allowed}
+                      onClick={() => { setActiveGate(g); setSwitchGate(false) }}
+                      className={`relative group flex flex-col items-center justify-center p-6 rounded-xl border-2 transition-all duration-200 text-left ${allowed ? 'border-slate-200 hover:border-indigo-500 hover:shadow-lg hover:shadow-indigo-100 bg-white cursor-pointer hover:-translate-y-1' : 'border-slate-100 bg-slate-50/50 cursor-not-allowed opacity-75'}`}
+                    >
+                      <div className={`p-4 rounded-full mb-4 ${allowed ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors' : 'bg-slate-100 text-slate-400'}`}>
+                        {allowed ? <DoorOpen size={32} strokeWidth={1.5} /> : <Lock size={32} strokeWidth={1.5} />}
+                      </div>
+                      <h3 className={`text-lg font-semibold ${allowed ? 'text-slate-800' : 'text-slate-500'}`}>{g}</h3>
+                      <p className={`text-xs mt-1 text-center font-medium ${allowed ? 'text-indigo-600/0 group-hover:text-indigo-600 transition-colors' : 'text-slate-400'}`}>
+                        {allowed ? 'Enter Post →' : 'Unauthorized'}
+                      </p>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            {!activeGate && (
+              <div className="px-8 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+                <p className="text-xs text-slate-500">Need access? Contact a Super Admin.</p>
+                <Button tone="secondary" onClick={logout} icon={LogOut}>Sign out</Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -15,12 +15,12 @@ const hashToken = (t) => createHash('sha256').update(t).digest('hex')
 
 export async function profile(userId) {
   const u = await one(
-    `SELECT u.id, u.name, u.email, u.department, u.phone, u.vendor_id, r.code AS role, r.name AS role_name,
+    `SELECT u.id, u.name, u.email, u.department, u.phone, u.vendor_id, u.gate_permissions, r.code AS role, r.name AS role_name,
             (SELECT array_agg(screen_code ORDER BY screen_code) FROM role_permissions WHERE role_id = r.id) AS permissions
        FROM users u JOIN roles r ON r.id = u.role_id WHERE u.id = $1`,
     [userId],
   )
-  return { id: u.id, name: u.name, email: u.email, department: u.department, phone: u.phone, vendorId: u.vendor_id, role: u.role, roleName: u.role_name, permissions: u.permissions || [] }
+  return { id: u.id, name: u.name, email: u.email, department: u.department, phone: u.phone, vendorId: u.vendor_id, role: u.role, roleName: u.role_name, permissions: u.permissions || [], gatePermissions: u.gate_permissions || [] }
 }
 
 /** Creates a single-use, 1-hour reset token and returns the link. */

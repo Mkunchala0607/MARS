@@ -22,6 +22,7 @@ export const SCREENS = [
   ['approvals', 'Pending Approvals', 'Approvals'],
   ['gate', 'Gate Entry / Exit', 'Security'],
   ['visitors', 'Visitor Register', 'Security'],
+  ['gate_registers', 'Registers', 'Security'],
   ['weighbridge', 'Weighbridge', 'Store'],
   ['direct', 'Direct Gate Pass', 'Store'],
   ['masters', 'Master Data', 'Store'],
@@ -36,8 +37,8 @@ export const DEFAULT_PERMISSIONS = {
   requester: ['dashboard', 'NRGP', 'RGP', 'SCRAP', 'INWARD'],
   vendor: ['dashboard', 'INWARD'],
   approver: ['dashboard', 'approvals'],
-  security: ['dashboard', 'gate', 'visitors'],
-  store: ['dashboard', 'NRGP', 'RGP', 'SCRAP', 'INWARD', 'STORE', 'weighbridge', 'direct', 'masters', 'reports', 'gate'],
+  security: ['dashboard', 'gate', 'visitors', 'gate_registers'],
+  store: ['dashboard', 'NRGP', 'RGP', 'SCRAP', 'INWARD', 'STORE', 'weighbridge', 'direct', 'masters', 'reports', 'gate', 'gate_registers'],
   admin: SCREENS.map((s) => s[0]),
 }
 

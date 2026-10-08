@@ -161,16 +161,18 @@ export function Table({ columns, rows, empty = 'No records found', onRowClick, r
   )
 }
 
-export function Modal({ open, title, onClose, children, footer, wide }) {
+export function Modal({ open, title, onClose, children, footer, wide, hideClose }) {
   if (!open) return null
   return (
     <div className="no-print fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4" onClick={onClose}>
       <div className={`max-h-[90vh] w-full overflow-auto rounded-xl bg-white shadow-xl ${wide ? 'max-w-3xl' : 'max-w-lg'}`} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
           <h3 className="font-semibold text-slate-900">{title}</h3>
-          <button onClick={onClose} className="rounded p-1 text-slate-400 hover:bg-slate-100">
-            <X size={18} />
-          </button>
+          {!hideClose && (
+            <button onClick={onClose} className="rounded p-1 text-slate-400 hover:bg-slate-100">
+              <X size={18} />
+            </button>
+          )}
         </div>
         <div className="p-5">{children}</div>
         {footer && <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-3">{footer}</div>}

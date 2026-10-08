@@ -7,6 +7,13 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [booting, setBooting] = useState(!!tokenStore.get())
   const [toasts, setToasts] = useState([])
+  const [activeGate, setActiveGate] = useState(localStorage.getItem('activeGate') || null)
+
+  const setGate = useCallback((gate) => {
+    setActiveGate(gate)
+    if (gate) localStorage.setItem('activeGate', gate)
+    else localStorage.removeItem('activeGate')
+  }, [])
 
   const toast = useCallback((text, tone = 'success') => {
     const id = Math.random().toString(36).slice(2)
@@ -18,7 +25,8 @@ export function AuthProvider({ children }) {
     if (tokenStore.get()) api.post('/auth/logout').catch(() => {})
     tokenStore.set(null)
     setUser(null)
-  }, [])
+    setGate(null)
+  }, [setGate])
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
@@ -50,7 +58,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, booting, login, logout, refreshUser, can, toast, fail }}>
+    <AuthContext.Provider value={{ user, booting, login, logout, refreshUser, can, toast, fail, activeGate, setActiveGate: setGate }}>
       {children}
       <div className="no-print fixed right-4 bottom-4 z-50 flex max-w-sm flex-col gap-2" role="status" aria-live="polite">
         {toasts.map((t) => (

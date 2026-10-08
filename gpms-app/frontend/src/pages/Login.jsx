@@ -105,8 +105,8 @@ export default function Login() {
         <Button className="w-full" type="submit" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</Button>
       </form>
       <div className="my-5 text-center text-xs text-slate-400">OR CONTINUE WITH</div>
-      <Button tone="secondary" className="w-full" onClick={() => toast('MARS Single Sign-On will be enabled once MARS IT shares the SAML/OAuth2 details', 'info')}>
-        Sign in with MARS Single Sign-On
+      <Button tone="secondary" className="w-full" onClick={() => window.location.href = '/api/v1/auth/microsoft'}>
+        Sign in with MARS Microsoft SSO
       </Button>
       <div className="mt-4 flex justify-between text-sm">
         <button className="text-brand-600 hover:underline" onClick={() => { setRegErrors({}); setModal('register') }}>New user? Register</button>

@@ -18,7 +18,7 @@ export default function Users() {
   const pendingReg = (list.data?.data || []).filter((u) => !u.isActive && u.selfRegistered).length
 
   const save = async () => {
-    const body = { name: edit.name, email: edit.email, role: edit.role, department: edit.department || null, phone: edit.phone || null, vendorId: edit.role === 'vendor' ? Number(edit.vendorId) || null : null }
+    const body = { name: edit.name, email: edit.email, role: edit.role, department: edit.department || null, phone: edit.phone || null, vendorId: edit.role === 'vendor' ? Number(edit.vendorId) || null : null, gatePermissions: edit.role === 'security' ? edit.gatePermissions || [] : [] }
     try {
       const res = edit.id ? await api.put(`/users/${edit.id}`, body) : await api.post('/users', body)
       toast(edit.id ? 'User updated' : `User created — a set-password link was emailed to ${res.email}`)
@@ -88,6 +88,27 @@ export default function Users() {
               <Field label="Linked vendor" required error={errors.vendorId}>
                 <Select placeholder="Select vendor" value={edit.vendorId || ''} onChange={(e) => setEdit({ ...edit, vendorId: e.target.value })} options={(vendors.data?.data || []).map((v) => ({ value: v.id, label: v.name }))} />
               </Field>
+            )}
+            {edit.role === 'security' && (
+              <div className="sm:col-span-2">
+                <div className="mb-2 text-sm font-semibold text-slate-800">Gate Permissions</div>
+                <div className="flex flex-wrap gap-4">
+                  {['Gate 1', 'Gate 2', 'Gate 3'].map((g) => (
+                    <label key={g} className="flex items-center gap-2 text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-brand-600"
+                        checked={(edit.gatePermissions || []).includes(g)}
+                        onChange={(e) => {
+                          const perms = edit.gatePermissions || []
+                          setEdit({ ...edit, gatePermissions: e.target.checked ? [...perms, g] : perms.filter((p) => p !== g) })
+                        }}
+                      />
+                      {g}
+                    </label>
+                  ))}
+                </div>
+              </div>
             )}
             {!edit.id && <p className="text-xs text-slate-500 sm:col-span-2">The user receives an email with a link to set their own password.</p>}
           </div>
