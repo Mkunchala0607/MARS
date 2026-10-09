@@ -52,7 +52,8 @@ export default function Gate() {
   const rows = (awaiting.data?.data || [])
     .filter((x) => x.gateStatus === 'AwaitingGate' || (x.type === 'RGP' && x.gateStatus === 'Exited'))
     .filter((x) => {
-      const dStr = x.gateStatus === 'Exited' ? x.expectedReturnDate : (x.decidedAt || x.createdAt)
+      const returnDate = x.revisedReturnDate || x.expectedReturnDate
+      const dStr = x.gateStatus === 'Exited' ? returnDate : (x.decidedAt || x.createdAt)
       if (!dStr) return true
       const dObj = new Date(dStr)
       const d = new Date(dObj.getTime() - dObj.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
@@ -89,7 +90,7 @@ export default function Gate() {
                 <dt className="text-slate-500">Vehicle</dt><dd className="font-semibold">{p.vehicleNo || '—'}</dd>
                 <dt className="text-slate-500">Driver</dt><dd>{p.driverName || '—'}</dd>
                 <dt className="text-slate-500">Value amount</dt><dd>{inr(p.items.reduce((acc, i) => acc + Number(i.approxValue || 0), 0))}</dd>
-                {p.type === 'RGP' && (<><dt className="text-slate-500">Expected return</dt><dd>{fmtDate(p.expectedReturnDate)}</dd></>)}
+                {p.type === 'RGP' && (<><dt className="text-slate-500">Expected return</dt><dd>{fmtDate(p.revisedReturnDate || p.expectedReturnDate)}</dd></>)}
                 <dt className="text-slate-500">Gate status</dt><dd><Badge tone="neutral">{GATE_STATUS_LABELS[p.gateStatus]}</Badge></dd>
               </dl>
               <Link to={`/pass/${p.id}`} className="mt-2 inline-block text-xs text-brand-600 hover:underline">View full pass →</Link>
@@ -145,12 +146,13 @@ export default function Gate() {
                 {
                   key: 'due',
                   label: 'Due',
-                  render: (x) =>
-                    x.gateStatus === 'Exited' ? (
-                      <span className={x.expectedReturnDate < new Date().toISOString().slice(0, 10) ? 'font-medium text-rose-600' : ''}>{fmtDate(x.expectedReturnDate)}</span>
-                    ) : (
-                      fmtDateTime(x.decidedAt || x.createdAt)
-                    ),
+                  render: (x) => {
+                    if (x.gateStatus === 'Exited') {
+                      const rd = x.revisedReturnDate || x.expectedReturnDate
+                      return <span className={rd < new Date().toISOString().slice(0, 10) ? 'font-medium text-rose-600' : ''}>{fmtDate(rd)}</span>
+                    }
+                    return fmtDateTime(x.decidedAt || x.createdAt)
+                  }
                 },
               ]}
             />

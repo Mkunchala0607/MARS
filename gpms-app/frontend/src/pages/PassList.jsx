@@ -65,7 +65,6 @@ export default function PassList() {
                 { key: 'passNo', label: 'Gate Pass No.', render: (p) => <span className="font-semibold text-slate-800">{p.passNo}</span> },
                 { key: 'createdAt', label: 'Date / Time', render: (p) => fmtDateTime(p.createdAt), className: 'whitespace-nowrap' },
                 { key: 'partyName', label: type === 'STORE' ? 'Movement' : 'Party' },
-                { key: 'firstItem', label: 'Material', render: (p) => <span className="text-slate-600">{p.firstItem}{p.itemCount > 1 ? ` +${p.itemCount - 1}` : ''}</span> },
                 ...(seeAll ? [{ key: 'requester', label: 'Requester', render: (p) => p.requester.name }] : []),
                 ...(type !== 'STORE' ? [{ key: 'vehicleNo', label: 'Vehicle', render: (p) => p.vehicleNo || '—' }] : []),
                 { key: 'totalValue', label: 'Value', render: (p) => inr(p.totalValue), className: 'text-right' },
@@ -73,7 +72,11 @@ export default function PassList() {
                   ? [{
                       key: 'expectedReturnDate',
                       label: 'Expected Return',
-                      render: (p) => p.returnedAt ? <Badge tone="Approved">Returned</Badge> : p.gateStatus === 'Exited' && p.expectedReturnDate < new Date().toISOString().slice(0, 10) ? <Badge tone="Rejected">Overdue {p.expectedReturnDate}</Badge> : p.expectedReturnDate,
+                      render: (p) => {
+                        if (p.returnedAt) return <Badge tone="Approved">Returned</Badge>
+                        const d = p.revisedReturnDate || p.expectedReturnDate
+                        return p.gateStatus === 'Exited' && d < new Date().toISOString().slice(0, 10) ? <Badge tone="Rejected">Overdue {d}</Badge> : d
+                      },
                     }]
                   : []),
                 { key: 'status', label: 'Status', render: (p) => <div className="flex gap-1"><Badge>{p.status}</Badge>{p.isDirectEntry && <Badge tone="Direct">Direct</Badge>}</div> },

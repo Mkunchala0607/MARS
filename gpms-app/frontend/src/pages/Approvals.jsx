@@ -117,7 +117,7 @@ function PassQueue({ onChanged }) {
                 ['Requested By', `${detail.data.requester.name}${detail.data.department ? ` (${detail.data.department})` : ''}`],
                 [detail.data.type === 'STORE' ? 'Movement' : 'Vendor / Party', detail.data.partyName],
                 ['Purpose', detail.data.purpose],
-                detail.data.type === 'RGP' && ['Expected Return', detail.data.expectedReturnDate],
+                detail.data.type === 'RGP' && ['Expected Return', detail.data.revisedReturnDate || detail.data.expectedReturnDate],
                 detail.data.type === 'INWARD' && ['PO No.', detail.data.poNumber],
                 detail.data.type !== 'STORE' && ['Vehicle', detail.data.vehicleNo],
                 detail.data.type !== 'RGP' && ['Items', detail.data.items.map((i) => `${i.description} × ${i.quantity} ${i.uom}`).join('; ')],
@@ -238,14 +238,14 @@ export default function Approvals() {
   return (
     <>
       <PageHeader crumbs={['Approvals']} title="Pending Approvals" subtitle="Review gate passes, visitor requests and weighments awaiting your decision." />
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-8 flex flex-wrap gap-3">
         {[
           ['passes', 'Gate Passes', s?.pendingPasses],
           ['visitors', 'Visitors', s?.pendingVisitors],
           ['weigh', 'Weighbridge', s?.pendingWeighments],
         ].map(([k, l, n]) => (
-          <button key={k} onClick={() => setKind(k)} className={`rounded-full px-3.5 py-1.5 text-sm font-medium ${kind === k ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'}`}>
-            {l}{n !== undefined ? ` (${n})` : ''}
+          <button key={k} onClick={() => setKind(k)} className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition-all shadow-sm ${kind === k ? 'bg-brand-600 text-white shadow-brand-600/30 ring-2 ring-brand-600 ring-offset-2 ring-offset-slate-50' : 'bg-white text-slate-600 border border-slate-200/60 hover:bg-slate-50 hover:text-slate-900'}`}>
+            {l}{n !== undefined ? <span className={`ml-2 inline-flex items-center justify-center rounded-lg px-2 py-0.5 text-xs ${kind === k ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>{n}</span> : ''}
           </button>
         ))}
       </div>

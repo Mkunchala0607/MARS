@@ -14,7 +14,7 @@ const router = Router()
 
 const SELECT_PASS = `
   SELECT gp.*, u.name AS requester_name, v.name AS vendor_name, v.gstin AS vendor_gstin, v.code AS vendor_code,
-         ab.name AS approved_by_name, rd.expected_return_date, rd.returned_at,
+         ab.name AS approved_by_name, rd.expected_return_date, rd.returned_at, rd.revised_return_date,
          sm.from_location, sm.to_location, sm.movement_type
     FROM gate_passes gp
     JOIN users u ON u.id = gp.requester_id
@@ -48,6 +48,7 @@ export function toPass(r) {
     poNumber: r.po_number,
     inwardDate: r.inward_date,
     expectedReturnDate: r.expected_return_date ?? null,
+    revisedReturnDate: r.revised_return_date ?? null,
     returnedAt: r.returned_at ?? null,
     fromLocation: r.from_location ?? null,
     toLocation: r.to_location ?? null,
@@ -258,6 +259,36 @@ router.put('/:id', async (req, res) => {
   sendEmails(mails)
   res.json(await loadFullPass(id, user))
 })
+
+// Revise return date for an approved RGP.
+router.post('/:id/revise-date', async (req, res) => {
+  const id = idParam(req.params.id)
+  const { revisedDate, remarks } = parse(z.object({ revisedDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), remarks: z.string().trim().max(500).optional() }), req.body)
+  const user = req.user
+  let mails = []
+  await tx(async (db) => {
+    const cur = (await db.query('SELECT * FROM gate_passes WHERE id = $1 FOR UPDATE', [id])).rows[0]
+    if (!cur || cur.requester_id !== user.id) throw notFound('Gate pass not found')
+    if (cur.deleted_at) throw conflict('This gate pass has been deleted')
+    if (cur.gate_pass_type !== 'RGP') throw conflict('Only RGPs can have their return date revised')
+    if (cur.status !== 'Approved') throw conflict('Only approved RGPs can be revised')
+    
+    // Change status back to Pending so it has to be re-approved
+    await db.query(
+      `UPDATE gate_passes SET status='Pending', approved_by=NULL, decided_at=NULL, decision_remarks=NULL, updated_at=now() WHERE id=$1`,
+      [id],
+    )
+    await db.query(
+      `UPDATE rgp_details SET revised_return_date = $1 WHERE gate_pass_id = $2`,
+      [revisedDate, id]
+    )
+    await addTimeline(db, { entityType: 'gate_pass', entityId: id, event: 'Renewed', actor: user, remarks: `Revised return date to ${revisedDate}. ${remarks || ''}`.trim() })
+    mails = await notify(db, await approverIds(db), `${cur.pass_no} was renewed (date revised) by ${user.name}`, `/pass/${id}`)
+  })
+  sendEmails(mails)
+  res.json(await loadFullPass(id, user))
+})
+
 
 // ───────── approvals ─────────
 async function decideOne(db, id, { decision, remarks }, user) {

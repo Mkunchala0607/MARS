@@ -15,6 +15,9 @@ export default function PassDetail() {
   const [remarks, setRemarks] = useState('')
   const [delOpen, setDelOpen] = useState(false)
   const [delReason, setDelReason] = useState('')
+  const [reviseOpen, setReviseOpen] = useState(false)
+  const [revisedDate, setRevisedDate] = useState('')
+  const [reviseRemarks, setReviseRemarks] = useState('')
   const [busy, setBusy] = useState(false)
 
   if (error) return <ErrorState error={error} onRetry={reload} />
@@ -49,6 +52,20 @@ export default function PassDetail() {
     }
   }
 
+  const reviseReturnDate = async () => {
+    if (!revisedDate) return toast('New date is required', 'error')
+    setBusy(true)
+    try {
+      setData(await api.post(`/gate-passes/${p.id}/revise-date`, { revisedDate, remarks: reviseRemarks.trim() || undefined }))
+      toast('Return date revised and pass sent for re-approval')
+      setReviseOpen(false)
+    } catch (err) {
+      toast(err.message, 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <>
       <PageHeader
@@ -59,6 +76,7 @@ export default function PassDetail() {
           <>
             <Button tone="secondary" icon={ArrowLeft} onClick={() => navigate(-1)}>Back</Button>
             {p.status === 'Approved' && !p.deletedAt && <Button tone="secondary" icon={Printer} onClick={() => window.print()}>Print / PDF</Button>}
+            {p.type === 'RGP' && p.status === 'Approved' && !p.deletedAt && p.requester.id === user.id && <Button tone="secondary" icon={Pencil} onClick={() => setReviseOpen(true)}>Revise Date</Button>}
             {p.status === 'Rejected' && !p.deletedAt && p.requester.id === user.id && <Button icon={Pencil} to={`/passes/${p.type}/${p.id}/edit`}>Amend & Resubmit</Button>}
             {can('direct') && !p.deletedAt && <Button tone="danger" icon={Trash2} onClick={() => setDelOpen(true)}>Delete</Button>}
           </>
@@ -104,6 +122,7 @@ export default function PassDetail() {
                 ['Department', p.department],
                 ['Purpose', p.purpose],
                 p.type === 'RGP' && ['Expected Return', fmtDate(p.expectedReturnDate)],
+                p.type === 'RGP' && p.revisedReturnDate && ['Revised Return', fmtDate(p.revisedReturnDate)],
                 p.type === 'RGP' && ['Returned On', p.returnedAt ? fmtDateTime(p.returnedAt) : 'Not yet returned'],
                 p.type === 'INWARD' && ['PO / Reference', p.poNumber],
                 p.type === 'INWARD' && ['Inward Date', fmtDate(p.inwardDate)],
@@ -200,6 +219,21 @@ export default function PassDetail() {
       >
         <p className="mb-3 text-sm text-slate-600">This is a soft delete: the record is kept, marked invalid for gate movement, and the action is written to the audit log.</p>
         <Field label="Reason for Deletion" required><Textarea value={delReason} onChange={(e) => setDelReason(e.target.value)} /></Field>
+      </Modal>
+
+      <Modal
+        open={reviseOpen}
+        title="Revise Return Date"
+        onClose={() => setReviseOpen(false)}
+        footer={<><Button tone="secondary" onClick={() => setReviseOpen(false)}>Cancel</Button><Button onClick={reviseReturnDate} disabled={busy}>Revise & Re-submit</Button></>}
+      >
+        <p className="mb-4 text-sm text-slate-600">Revising the return date will put this gate pass back into <strong className="text-slate-800">Pending</strong> status. It will require approval again before any movement can happen.</p>
+        <Field label="New Tentative Return Date" required>
+          <input type="date" value={revisedDate} onChange={(e) => setRevisedDate(e.target.value)} min={new Date().toISOString().slice(0, 10)} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none" />
+        </Field>
+        <Field label="Reason for Revision" className="mt-3">
+          <Textarea value={reviseRemarks} onChange={(e) => setReviseRemarks(e.target.value)} placeholder="Why is the return date being changed?" />
+        </Field>
       </Modal>
     </>
   )

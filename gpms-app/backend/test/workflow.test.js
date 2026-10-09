@@ -154,6 +154,47 @@ describe('RGP return tracking', () => {
     assert.equal(ret.body.gateStatus, 'Returned')
     assert.ok(ret.body.returnedAt)
   })
+
+  test('revise date: only requester can revise, and only for approved RGPs', async () => {
+    const rgp = (await requester.post('/api/v1/gate-passes', nrgp({ type: 'RGP', sealNo: null, expectedReturnDate: futureDate() }))).body
+    
+    // not approved yet
+    assert.equal((await requester.post(`/api/v1/gate-passes/${rgp.id}/revise-date`, { revisedDate: futureDate() })).status, 409)
+
+    await approver.post(`/api/v1/gate-passes/${rgp.id}/decision`, { decision: 'Approved' })
+
+    // not the requester
+    assert.equal((await approver.post(`/api/v1/gate-passes/${rgp.id}/revise-date`, { revisedDate: futureDate() })).status, 404)
+  })
+
+  test('revise date: validation requires YYYY-MM-DD format', async () => {
+    const rgp = (await requester.post('/api/v1/gate-passes', nrgp({ type: 'RGP', sealNo: null, expectedReturnDate: futureDate() }))).body
+    await approver.post(`/api/v1/gate-passes/${rgp.id}/decision`, { decision: 'Approved' })
+
+    const bad1 = await requester.post(`/api/v1/gate-passes/${rgp.id}/revise-date`, { revisedDate: '01-01-2030' })
+    assert.equal(bad1.status, 400)
+    
+    const bad2 = await requester.post(`/api/v1/gate-passes/${rgp.id}/revise-date`, { revisedDate: '2030/01/01' })
+    assert.equal(bad2.status, 400)
+  })
+
+  test('revise date: happy path resets status to Pending and updates revisedReturnDate', async () => {
+    const rgp = (await requester.post('/api/v1/gate-passes', nrgp({ type: 'RGP', sealNo: null, expectedReturnDate: futureDate() }))).body
+    await approver.post(`/api/v1/gate-passes/${rgp.id}/decision`, { decision: 'Approved' })
+
+    const revisedStr = '2030-12-31'
+    const res = await requester.post(`/api/v1/gate-passes/${rgp.id}/revise-date`, { revisedDate: revisedStr, remarks: 'Delay' })
+    assert.equal(res.status, 200)
+    
+    // status is pending again
+    assert.equal(res.body.status, 'Pending')
+    
+    // check timeline contains Renewed event
+    assert.ok(res.body.timeline.some((t) => t.event === 'Renewed' && t.remarks.includes('Delay')))
+
+    // revised date was saved successfully
+    assert.ok(res.body.revisedReturnDate.startsWith(revisedStr))
+  })
 })
 
 describe('role scoping and elevated access', () => {

@@ -27,7 +27,7 @@ dashboardRouter.get('/', async (req, res) => {
       (SELECT count(*)::int FROM visitor_gate_passes WHERE in_time IS NOT NULL AND out_time IS NULL) AS visitors_inside,
       (SELECT count(*)::int FROM gate_passes WHERE deleted_at IS NULL AND gate_status = 'AwaitingGate') AS awaiting_gate,
       (SELECT count(*)::int FROM gate_passes gp JOIN rgp_details r ON r.gate_pass_id = gp.id
-         WHERE gp.deleted_at IS NULL AND gp.gate_status = 'Exited' AND r.expected_return_date < current_date) AS rgp_overdue`)
+         WHERE gp.deleted_at IS NULL AND gp.gate_status = 'Exited' AND COALESCE(r.revised_return_date, r.expected_return_date) < current_date) AS rgp_overdue`)
   const { rows: activity } = await query(`
     SELECT d::date AS day,
            count(gp.id) FILTER (WHERE gp.gate_pass_type = 'INWARD')::int AS inward,
